@@ -1,19 +1,59 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Camera, RefreshCw, Info, AlertTriangle, CheckCircle, BrainCircuit, Sparkles, ArrowRight, Zap, Plus, X, Share2, ChevronRight } from 'lucide-react';
+import { Camera, RefreshCw, Info, AlertTriangle, CheckCircle, BrainCircuit, Sparkles, ArrowRight, Zap, Plus, X, Share2 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 
-class ErrorBoundary extends React.Component<any, any> {
-    constructor(props) {
+// --- Type Definitions ---
+
+interface UploadedImage {
+    url: string;
+    file: File;
+    type: string;
+}
+
+interface AnalysisData {
+    productName: string;
+    verdict: {
+        title: string;
+        color: 'green' | 'red' | string;
+    };
+    highlights: Array<{
+        type: 'good' | 'bad' | string;
+        label: string;
+        value: string;
+        desc: string;
+    }>;
+    translations: Array<{
+        origin: string;
+        simplified: string;
+        explain: string;
+    }>;
+    advice: {
+        target: string;
+        warning: string;
+        action: string;
+    };
+}
+
+interface ErrorBoundaryState {
+    hasError: boolean;
+    error: Error | null;
+    errorInfo: React.ErrorInfo | null;
+}
+
+// --- Error Boundary Component ---
+
+class ErrorBoundary extends React.Component<{ children: React.ReactNode }, ErrorBoundaryState> {
+    constructor(props: { children: React.ReactNode }) {
         super(props);
         this.state = { hasError: false, error: null, errorInfo: null };
     }
 
-    static getDerivedStateFromError(error) {
+    static getDerivedStateFromError(error: Error) {
         return { hasError: true, error };
     }
 
-    componentDidCatch(error, errorInfo) {
+    componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
         console.error("Mobile Crash Log:", error, errorInfo);
         this.setState({ errorInfo });
     }
@@ -43,6 +83,8 @@ class ErrorBoundary extends React.Component<any, any> {
     }
 }
 
+// --- Constants ---
+
 const LOADING_TIPS = [
     "🥗 正在閱讀包裝上的小字...",
     "🥓 正在尋找隱藏的熱量地雷...",
@@ -51,19 +93,21 @@ const LOADING_TIPS = [
     "🧪 正在翻譯化學成分..."
 ];
 
+// --- Main Component ---
+
 const NutritionDecoderScreen = () => {
-    const [currentStep, setCurrentStep] = useState('home');
-    const [selectedImages, setSelectedImages] = useState([]);
-    const [analysisData, setAnalysisData] = useState(null);
+    const [currentStep, setCurrentStep] = useState<'home' | 'analyzing' | 'result'>('home');
+    const [selectedImages, setSelectedImages] = useState<UploadedImage[]>([]);
+    const [analysisData, setAnalysisData] = useState<AnalysisData | null>(null);
     const [loadingMessage, setLoadingMessage] = useState(LOADING_TIPS[0]);
 
     // Hardcoded model selection
     const selectedModel = "gemini-2.5-flash";
 
-    const resultCardRef = useRef(null);
+    const resultCardRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        let interval;
+        let interval: NodeJS.Timeout;
         if (currentStep === 'analyzing') {
             let i = 0;
             interval = setInterval(() => {
@@ -71,53 +115,60 @@ const NutritionDecoderScreen = () => {
                 setLoadingMessage(LOADING_TIPS[i]);
             }, 2000);
         }
-        return () => clearInterval(interval);
+        return () => {
+            if (interval) clearInterval(interval);
+        };
     }, [currentStep]);
 
-    const compressImage = (file) => {
+    const compressImage = (file: File): Promise<UploadedImage> => {
         return new Promise((resolve) => {
             const reader = new FileReader();
             reader.readAsDataURL(file);
             reader.onload = (event) => {
                 const img = new Image();
-                img.src = event.target.result;
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    const MAX_WIDTH = 1024;
-                    const MAX_HEIGHT = 1024;
-                    let width = img.width;
-                    let height = img.height;
+                if (event.target?.result) {
+                    img.src = event.target.result as string;
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        const MAX_WIDTH = 1024;
+                        const MAX_HEIGHT = 1024;
+                        let width = img.width;
+                        let height = img.height;
 
-                    if (width > height) {
-                        if (width > MAX_WIDTH) {
-                            height *= MAX_WIDTH / width;
-                            width = MAX_WIDTH;
+                        if (width > height) {
+                            if (width > MAX_WIDTH) {
+                                height *= MAX_WIDTH / width;
+                                width = MAX_WIDTH;
+                            }
+                        } else {
+                            if (height > MAX_HEIGHT) {
+                                width *= MAX_HEIGHT / height;
+                                height = MAX_HEIGHT;
+                            }
                         }
-                    } else {
-                        if (height > MAX_HEIGHT) {
-                            width *= MAX_HEIGHT / height;
-                            height = MAX_HEIGHT;
+
+                        canvas.width = width;
+                        canvas.height = height;
+                        const ctx = canvas.getContext('2d');
+                        if (ctx) {
+                            ctx.drawImage(img, 0, 0, width, height);
+
+                            const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                            resolve({
+                                url: dataUrl,
+                                file: file,
+                                type: 'image/jpeg'
+                            });
                         }
-                    }
-
-                    canvas.width = width;
-                    canvas.height = height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, width, height);
-
-                    const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
-                    resolve({
-                        url: dataUrl,
-                        type: 'image/jpeg'
-                    });
-                };
+                    };
+                }
             };
         });
     };
 
-    const handleImageUpload = async (e) => {
-        const files = Array.from(e.target.files);
-        if (files.length > 0) {
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files.length > 0) {
+            const files = Array.from(e.target.files);
             setLoadingMessage("🖼️ 正在壓縮圖片...");
 
             const processPromises = files.map(file => compressImage(file));
@@ -132,11 +183,11 @@ const NutritionDecoderScreen = () => {
         }
     };
 
-    const removeImage = (index) => {
+    const removeImage = (index: number) => {
         setSelectedImages(prev => prev.filter((_, i) => i !== index));
     };
 
-    function prepareImageForBackend(base64Url, mimeType) {
+    function prepareImageForBackend(base64Url: string, mimeType: string) {
         const base64Data = base64Url.split(',')[1];
         return {
             type: "image",
@@ -177,7 +228,7 @@ const NutritionDecoderScreen = () => {
             setAnalysisData(finalData);
             setCurrentStep('result');
 
-        } catch (error) {
+        } catch (error: any) {
             console.error("分析失敗:", error);
             alert(`糟糕！分析失敗。\n\n錯誤原因：${error.message}`);
             setCurrentStep('home');
@@ -191,7 +242,7 @@ const NutritionDecoderScreen = () => {
     };
 
     const handleShare = async () => {
-        if (!resultCardRef.current) return;
+        if (!resultCardRef.current || !analysisData) return;
 
         try {
             const canvas = await html2canvas(resultCardRef.current, {
