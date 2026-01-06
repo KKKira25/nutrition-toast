@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Camera, RefreshCw, Info, ChevronRight, AlertTriangle, CheckCircle, BrainCircuit, Sparkles, ArrowRight, Zap, Plus, X, Share2 } from 'lucide-react';
+import { Camera, RefreshCw, Info, AlertTriangle, CheckCircle, BrainCircuit, Sparkles, ArrowRight, Zap, Plus, X, Share2, ChevronRight } from 'lucide-react';
 import html2canvas from 'html2canvas';
 
 const LOADING_TIPS = [
@@ -11,18 +11,14 @@ const LOADING_TIPS = [
     "🧪 正在翻譯化學成分..."
 ];
 
-const MODELS = [
-    { id: "gemini-2.5-flash-lite", name: "Gemini 2.5 Flash Lite" },
-    { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash (Default)" },
-    { id: "gemini-2.0-flash", name: "Gemini 2.0 Flash" }
-];
-
 const NutritionDecoderApp = () => {
     const [currentStep, setCurrentStep] = useState('home');
     const [selectedImages, setSelectedImages] = useState([]);
     const [analysisData, setAnalysisData] = useState(null);
     const [loadingMessage, setLoadingMessage] = useState(LOADING_TIPS[0]);
-    const [selectedModel, setSelectedModel] = useState("gemini-2.5-flash");
+
+    // Hardcoded model selection
+    const selectedModel = "gemini-2.5-flash";
 
     const resultCardRef = useRef(null);
 
@@ -208,23 +204,6 @@ const NutritionDecoderApp = () => {
 
                                 <h3 className="text-xl font-bold text-slate-800 mb-2">上傳包裝背面</h3>
                                 <p className="text-slate-400 text-sm mb-6">請確保文字清晰 (可多張)</p>
-
-                                {/* Model Selector */}
-                                <div className="mb-6 w-full max-w-xs">
-                                    <label className="block text-xs font-bold text-slate-500 mb-2 px-1">選擇 AI 模型</label>
-                                    <div className="relative">
-                                        <select
-                                            value={selectedModel}
-                                            onChange={(e) => setSelectedModel(e.target.value)}
-                                            className="w-full bg-slate-50 border border-slate-200 text-slate-700 text-sm rounded-xl focus:ring-emerald-500 focus:border-emerald-500 block p-3 appearance-none font-medium"
-                                        >
-                                            {MODELS.map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
-                                        </select>
-                                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
-                                            <ChevronRight size={16} className="rotate-90" />
-                                        </div>
-                                    </div>
-                                </div>
 
                                 <div className="w-full max-w-xs space-y-4">
                                     <label className="block w-full cursor-pointer group">
