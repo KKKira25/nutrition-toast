@@ -188,9 +188,9 @@ const NutritionDecoderApp = () => {
                                     看不懂營養標示？
                                 </h2>
 
-                                <p className="text-emerald-100 text-sm leading-relaxed opacity-90 mb-8 relative z-10 max-w-[280px]">
-                                    拍張照，AI 幫你把化學名詞翻譯成「白話文」，<br />
-                                    一眼看穿是優質營養還是熱量陷阱。
+                                {/* Increased max-width to prevent awkward line break */}
+                                <p className="text-emerald-100 text-sm leading-relaxed opacity-90 mb-8 relative z-10 max-w-[350px]">
+                                    拍張照，AI 幫你把化學名詞翻譯成「白話文」，一眼看穿是優質營養還是熱量陷阱。
                                 </p>
 
                                 <div className="flex gap-3 text-xs font-medium text-emerald-50 relative z-10">

@@ -2,15 +2,20 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Force reset to allow full-screen centering */
-:root, body, #root {
-  height: 100%;
+/* Use dvh for better mobile browser support (dynamic address bar handling) */
+:root,
+body,
+#root {
+  min-height: 100dvh;
   width: 100%;
   margin: 0;
   padding: 0;
   overflow-x: hidden;
+  /* Ensure scrolling happens on the body, not html */
+  overflow-y: auto;
 }
 
 body {
-  background-color: #f5f5f4; /* bg-stone-100 */
+  background-color: #f5f5f4;
+  /* bg-stone-100 */
 }
