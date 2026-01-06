@@ -3,6 +3,46 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Camera, RefreshCw, Info, AlertTriangle, CheckCircle, BrainCircuit, Sparkles, ArrowRight, Zap, Plus, X, Share2, ChevronRight } from 'lucide-react';
 import html2canvas from 'html2canvas';
 
+class ErrorBoundary extends React.Component<any, any> {
+    constructor(props) {
+        super(props);
+        this.state = { hasError: false, error: null, errorInfo: null };
+    }
+
+    static getDerivedStateFromError(error) {
+        return { hasError: true, error };
+    }
+
+    componentDidCatch(error, errorInfo) {
+        console.error("Mobile Crash Log:", error, errorInfo);
+        this.setState({ errorInfo });
+    }
+
+    render() {
+        if (this.state.hasError) {
+            return (
+                <div className="p-8 min-h-screen flex flex-col items-center justify-center bg-red-50 text-red-900 text-center">
+                    <h1 className="text-2xl font-bold mb-4">💥 發生錯誤 (Mobile Debug)</h1>
+                    <p className="mb-4">請截圖傳給工程師：</p>
+                    <div className="bg-white p-4 rounded shadow border border-red-200 text-left w-full overflow-auto max-h-[60vh] text-xs font-mono whitespace-pre-wrap break-all">
+                        {this.state.error && this.state.error.toString()}
+                        <br />
+                        <br />
+                        {this.state.errorInfo && this.state.errorInfo.componentStack}
+                    </div>
+                    <button
+                        onClick={() => window.location.reload()}
+                        className="mt-6 bg-red-600 text-white px-6 py-2 rounded-full font-bold"
+                    >
+                        重試 (Reload)
+                    </button>
+                </div>
+            );
+        }
+        return this.props.children;
+    }
+}
+
 const LOADING_TIPS = [
     "🥗 正在閱讀包裝上的小字...",
     "🥓 正在尋找隱藏的熱量地雷...",
@@ -11,7 +51,7 @@ const LOADING_TIPS = [
     "🧪 正在翻譯化學成分..."
 ];
 
-const NutritionDecoderApp = () => {
+const NutritionDecoderScreen = () => {
     const [currentStep, setCurrentStep] = useState('home');
     const [selectedImages, setSelectedImages] = useState([]);
     const [analysisData, setAnalysisData] = useState(null);
@@ -399,5 +439,11 @@ const NutritionDecoderApp = () => {
         </div>
     );
 };
+
+const NutritionDecoderApp = () => (
+    <ErrorBoundary>
+        <NutritionDecoderScreen />
+    </ErrorBoundary>
+);
 
 export default NutritionDecoderApp;
