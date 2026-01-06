@@ -74,24 +74,61 @@ const NutritionDecoderScreen = () => {
         return () => clearInterval(interval);
     }, [currentStep]);
 
-    const handleImageUpload = (e) => {
+    const compressImage = (file) => {
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = (event) => {
+                const img = new Image();
+                img.src = event.target.result;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 1024;
+                    const MAX_HEIGHT = 1024;
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > height) {
+                        if (width > MAX_WIDTH) {
+                            height *= MAX_WIDTH / width;
+                            width = MAX_WIDTH;
+                        }
+                    } else {
+                        if (height > MAX_HEIGHT) {
+                            width *= MAX_HEIGHT / height;
+                            height = MAX_HEIGHT;
+                        }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                    resolve({
+                        url: dataUrl,
+                        type: 'image/jpeg'
+                    });
+                };
+            };
+        });
+    };
+
+    const handleImageUpload = async (e) => {
         const files = Array.from(e.target.files);
         if (files.length > 0) {
-            const newImages = files.map(file => {
-                return new Promise((resolve) => {
-                    const reader = new FileReader();
-                    reader.onloadend = () => resolve({
-                        url: reader.result,
-                        file: file,
-                        type: file.type
-                    });
-                    reader.readAsDataURL(file);
-                });
-            });
+            setLoadingMessage("🖼️ 正在壓縮圖片...");
 
-            Promise.all(newImages).then(images => {
-                setSelectedImages(prev => [...prev, ...images]);
-            });
+            const processPromises = files.map(file => compressImage(file));
+
+            try {
+                const processedImages = await Promise.all(processPromises);
+                setSelectedImages(prev => [...prev, ...processedImages]);
+            } catch (err) {
+                console.error("Compression ended with error:", err);
+                alert("圖片處理失敗，請試著只上傳一張。");
+            }
         }
     };
 
