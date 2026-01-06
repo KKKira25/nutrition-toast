@@ -1,6 +1,15 @@
 <!doctype html>
 <html lang="zh-TW">
   <head>
+    <script>
+      // V2.6 Global Error Trap
+      // This will catch errors that happen before React even loads
+      window.onerror = function(message, source, lineno, colno, error) {
+        alert("🔴 系統嚴重錯誤:\n" + message + "\n位於: " + lineno + ":" + colno);
+        // Let the error bubble up so console still sees it
+        return false;
+      };
+    </script>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
